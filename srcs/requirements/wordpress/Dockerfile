@@ -1,5 +1,8 @@
 FROM debian:bookworm-slim
 
+ARG DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=$DEBIAN_FRONTEND
+
 # Update package index and install PHP and required extensions for WordPress
 RUN apt-get update && apt-get install -y --no-install-recommends \
     php8.2 \

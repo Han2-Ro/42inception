@@ -5,4 +5,4 @@
 
 
 # Project specific
-- There is a subject.txt in the root of this repo which specifies how the project should work when it is finished. Use it as a general guidance.
+- There is a subject.md in the root of this repo which specifies how the project should work when it is finished. Use it as a general guidance.
