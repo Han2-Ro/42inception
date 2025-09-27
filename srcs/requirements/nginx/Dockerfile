@@ -1,7 +1,8 @@
-FROM alpine:3.18
+FROM debian:bookworm-slim
 
 # Install nginx and ssl-cert for testing
-RUN apk add --no-cache nginx openssl
+RUN apt-get update && apt-get install -y --no-install-recommends nginx openssl && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create directories and SSL certificate
 RUN mkdir -p /var/log/nginx /var/cache/nginx && \

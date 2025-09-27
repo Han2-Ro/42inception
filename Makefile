@@ -1,17 +1,19 @@
-DOCKER_CMD = podman
+DOCKER_CMD = docker
+COMPOSE_CMD = docker compose
+COMPOSE_FILE = srcs/docker-compose.yml
 
 .PHONY: all build up down clean re
 
 all: build up
 
 build:
-	$(DOCKER_CMD)-compose -f $(COMPOSE_FILE) build
+	$(COMPOSE_CMD) -f $(COMPOSE_FILE) build
 
 up:
-	$(DOCKER_CMD)-compose -f $(COMPOSE_FILE) up -d
+	$(COMPOSE_CMD) -f $(COMPOSE_FILE) up -d
 
 down:
-	$(DOCKER_CMD)-compose -f $(COMPOSE_FILE) down
+	$(COMPOSE_CMD) -f $(COMPOSE_FILE) down
 
 clean: down
 	$(DOCKER_CMD) system prune -af

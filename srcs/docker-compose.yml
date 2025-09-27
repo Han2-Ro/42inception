@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   nginx:
     build:
@@ -9,3 +7,19 @@ services:
     ports:
       - "6443:443"
     restart: unless-stopped
+    # volumes:
+      # - wp-volume:/var/www/html:ro
+
+  wordpress:
+    build:
+      context: ./requirements/wordpress
+      dockerfile: Dockerfile
+    container_name: wordpress
+    restart: unless-stopped
+    expose:
+      - "9000"
+    volumes:
+      - wp-volume:/var/www/html
+
+volumes:
+  wp-volume: {}
