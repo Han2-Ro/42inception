@@ -20,17 +20,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     wget \
     tar \
+    ca-certificates \
+    && update-ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Create directories for WordPress
 RUN mkdir -p /var/www/html /run/php
 
-# Create a simple placeholder for WordPress (in production, this would download WordPress)
-RUN echo "<?php echo 'WordPress PHP-FPM is running!'; ?>" > /var/www/html/index.php
 
-# Set proper permissions
-RUN chown -R www-data:www-data /var/www/html && \
-    chmod -R 755 /var/www/html
+
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Configure PHP-FPM
 RUN sed -i 's/listen = \/run\/php\/php8.2-fpm.sock/listen = 9000/' /etc/php/8.2/fpm/pool.d/www.conf && \
@@ -40,5 +42,5 @@ RUN sed -i 's/listen = \/run\/php\/php8.2-fpm.sock/listen = 9000/' /etc/php/8.2/
 # Expose port 9000 for PHP-FPM
 EXPOSE 9000
 
-# Start PHP-FPM
-ENTRYPOINT ["php-fpm8.2", "-F"]
+# Use custom entrypoint script
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

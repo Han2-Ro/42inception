@@ -7,8 +7,8 @@ services:
     ports:
       - "6443:443"
     restart: unless-stopped
-    # volumes:
-      # - wp-volume:/var/www/html:ro
+    volumes:
+      - wp-volume:/var/www/html:ro
 
   wordpress:
     build:
