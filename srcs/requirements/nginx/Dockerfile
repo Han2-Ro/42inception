@@ -15,8 +15,10 @@ RUN mkdir -p /var/log/nginx /var/cache/nginx && \
 # Copy basic nginx config
 COPY conf/nginx.conf /etc/nginx/nginx.conf
 
+RUN touch var/www/html/index.php
+
 # Expose port 443 for HTTPS
 EXPOSE 443
 
 # Run nginx in foreground
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["nginx", "-g", "daemon off;"]

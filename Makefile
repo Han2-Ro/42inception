@@ -1,5 +1,5 @@
-DOCKER_CMD = docker
-COMPOSE_CMD = docker compose
+DOCKER_CMD = podman
+COMPOSE_CMD = podman-compose
 COMPOSE_FILE = srcs/docker-compose.yml
 
 .PHONY: all build up down clean re
