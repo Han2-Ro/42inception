@@ -1,44 +1,50 @@
 #!/bin/bash
-set -e
+set -eo pipefail
 
-# Initialize MariaDB data directory if it doesn't exist
+echo "Starting MariaDB entrypoint..."
+
+# Initialize MariaDB if needed
 if [ ! -d "/var/lib/mysql/mysql" ]; then
-    echo "Initializing MariaDB data directory..."
-    mysql_install_db --user=mysql --datadir=/var/lib/mysql
+    echo "Initializing MariaDB..."
+    mysql_install_db --user=mysql --datadir=/var/lib/mysql --skip-name-resolve --skip-test-db
     
-    echo "Starting MariaDB for initial setup..."
-    mysqld_safe --user=mysql --datadir=/var/lib/mysql &
+    # Start MariaDB in background for setup
+    mysqld --user=mysql --datadir=/var/lib/mysql --skip-networking &
+    PID="$!"
     
-    # Wait for MariaDB to start
+    # Wait for MariaDB to be ready
     for i in {1..30}; do
-        if mysql -u root -e "SELECT 1" > /dev/null 2>&1; then
+        if echo 'SELECT 1' | mysql --protocol=socket -uroot > /dev/null 2>&1; then
             break
         fi
-        echo "Waiting for MariaDB to start... ($i/30)"
+        echo "Waiting for MariaDB to start... $i/30"
         sleep 1
     done
     
-    echo "Setting up MariaDB database and users..."
-    mysql -u root << EOF
+    # Setup database and user
+    mysql --protocol=socket -uroot << EOSQL
+-- Setup database and user
+CREATE DATABASE IF NOT EXISTS \`${MYSQL_DATABASE}\`;
+CREATE USER '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
+GRANT ALL PRIVILEGES ON \`${MYSQL_DATABASE}\`.* TO '${MYSQL_USER}'@'%';
+
 -- Set root password
-ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
+UPDATE mysql.user SET Password=PASSWORD('${MYSQL_ROOT_PASSWORD}') WHERE User='root';
 DELETE FROM mysql.user WHERE User='';
 DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
 DROP DATABASE IF EXISTS test;
 DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
-
--- Create WordPress database and user
-CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE};
-CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
-GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%';
 FLUSH PRIVILEGES;
-EOF
+EOSQL
     
-    echo "Stopping initial MariaDB instance..."
-    mysqladmin -u root -p${MYSQL_ROOT_PASSWORD} shutdown
+    # Stop MariaDB
+    if ! kill -s TERM "$PID" || ! wait "$PID"; then
+        echo "MariaDB initialization process failed."
+        exit 1
+    fi
     
     echo "MariaDB initialization complete."
 fi
 
 echo "Starting MariaDB server..."
-exec mysqld_safe --user=mysql --datadir=/var/lib/mysql
+exec mysqld --user=mysql
