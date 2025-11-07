@@ -4,7 +4,7 @@ set -eo pipefail
 echo "Starting MariaDB entrypoint..."
 
 # Initialize MariaDB if needed
-if [ ! -d "/var/lib/mysql/mysql" ]; then
+if [ ! -f "/var/lib/mysql/.initialized" ]; then
     echo "Initializing MariaDB..."
     mysql_install_db --user=mysql --datadir=/var/lib/mysql --skip-name-resolve --skip-test-db
     
@@ -25,11 +25,11 @@ if [ ! -d "/var/lib/mysql/mysql" ]; then
     mysql --protocol=socket -uroot << EOSQL
 -- Setup database and user
 CREATE DATABASE IF NOT EXISTS \`${MYSQL_DATABASE}\`;
-CREATE USER '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
+CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
 GRANT ALL PRIVILEGES ON \`${MYSQL_DATABASE}\`.* TO '${MYSQL_USER}'@'%';
 
--- Set root password
-UPDATE mysql.user SET Password=PASSWORD('${MYSQL_ROOT_PASSWORD}') WHERE User='root';
+-- Set root password (MariaDB 10.4+ syntax)
+ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';
 DELETE FROM mysql.user WHERE User='';
 DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
 DROP DATABASE IF EXISTS test;
@@ -43,6 +43,8 @@ EOSQL
         exit 1
     fi
     
+    # Mark as initialized
+    touch /var/lib/mysql/.initialized
     echo "MariaDB initialization complete."
 fi
 
