@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     php8.2 \
     php8.2-fpm \
     php8.2-mysql \
+    php8.2-mysqli \
     php8.2-curl \
     php8.2-dom \
     php8.2-exif \
@@ -27,8 +28,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create directories for WordPress
 RUN mkdir -p /var/www/html /run/php
 
-
-
+# Install WP-CLI
+RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
+    && chmod +x wp-cli.phar \
+    && mv wp-cli.phar /usr/local/bin/wp
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh

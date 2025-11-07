@@ -3,58 +3,64 @@ set -e
 
 WORDPRESS_PATH="/var/www/html"
 
+# Function to wait for database
+wait_for_db() {
+    echo "Waiting for database connection..."
+    until php -r "
+        \$mysqli = new mysqli('mariadb', '${MYSQL_USER}', '${MYSQL_PASSWORD}', '${MYSQL_DATABASE}');
+        if (\$mysqli->connect_error) {
+            exit(1);
+        }
+        echo 'Database connected successfully';
+        \$mysqli->close();
+    " 2>/dev/null; do
+        echo "Database not ready, waiting..."
+        sleep 2
+    done
+    echo "Database is ready!"
+}
+
 # Check if WordPress is already installed
 if [ ! -f "$WORDPRESS_PATH/wp-config.php" ]; then
     echo "WordPress not found in $WORDPRESS_PATH. Installing..."
-    tmpdir=$(mktemp -d)
-    curl -o "$tmpdir/wordpress.tar.gz" -fSL https://wordpress.org/latest.tar.gz
-    tar -xzf "$tmpdir/wordpress.tar.gz" -C "$tmpdir"
-    rm -rf "$WORDPRESS_PATH"/*
-    cp -a "$tmpdir/wordpress/." "$WORDPRESS_PATH/"
-    rm -rf "$tmpdir"
+    
+    # Wait for database to be ready
+    wait_for_db
+    
+    # Download WordPress using WP-CLI
+    cd "$WORDPRESS_PATH"
+    wp core download --allow-root
+    
+    # Create wp-config.php
+    wp config create \
+        --dbname="$MYSQL_DATABASE" \
+        --dbuser="$MYSQL_USER" \
+        --dbpass="$MYSQL_PASSWORD" \
+        --dbhost="mariadb:3306" \
+        --allow-root
+    
+    # Install WordPress with admin user
+    wp core install \
+        --url="$WP_URL" \
+        --title="$WP_TITLE" \
+        --admin_user="$WP_ADMIN_USER" \
+        --admin_password="$WP_ADMIN_PASSWORD" \
+        --admin_email="$WP_ADMIN_EMAIL" \
+        --allow-root
+    
+    # Create additional user (as required by subject)
+    wp user create "$WP_USER" "$WP_USER_EMAIL" \
+        --user_pass="$WP_USER_PASSWORD" \
+        --role=editor \
+        --allow-root
+    
+    # Set proper ownership
     chown -R www-data:www-data "$WORDPRESS_PATH"
     chmod -R 755 "$WORDPRESS_PATH"
     
-    # Create wp-config.php with database settings
-    echo "Creating wp-config.php..."
-    cat > "$WORDPRESS_PATH/wp-config.php" << EOF
-<?php
-// WordPress Database Configuration
-define('DB_NAME', '${MYSQL_DATABASE}');
-define('DB_USER', '${MYSQL_USER}');
-define('DB_PASSWORD', '${MYSQL_PASSWORD}');
-define('DB_HOST', 'mariadb:3306');
-define('DB_CHARSET', 'utf8');
-define('DB_COLLATE', '');
-
-// WordPress Authentication Unique Keys and Salts
-define('AUTH_KEY',         'your-auth-key-here');
-define('SECURE_AUTH_KEY',  'your-secure-auth-key-here');
-define('LOGGED_IN_KEY',    'your-logged-in-key-here');
-define('NONCE_KEY',        'your-nonce-key-here');
-define('AUTH_SALT',        'your-auth-salt-here');
-define('SECURE_AUTH_SALT', 'your-secure-auth-salt-here');
-define('LOGGED_IN_SALT',   'your-logged-in-salt-here');
-define('NONCE_SALT',       'your-nonce-salt-here');
-
-// WordPress Database Table prefix
-\$table_prefix  = 'wp_';
-
-// WordPress Debugging
-define('WP_DEBUG', false);
-
-// Absolute path to the WordPress directory
-if ( !defined('ABSPATH') )
-    define('ABSPATH', dirname(__FILE__) . '/');
-
-// Sets up WordPress vars and included files
-require_once(ABSPATH . 'wp-settings.php');
-EOF
-    
-    chown www-data:www-data "$WORDPRESS_PATH/wp-config.php"
-    echo "WordPress installed and configured."
+    echo "WordPress installed and configured with admin user."
 else
-    echo "WordPress already present in $WORDPRESS_PATH. Skipping download."
+    echo "WordPress already present in $WORDPRESS_PATH. Skipping installation."
 fi
 
 exec php-fpm8.2 -F
