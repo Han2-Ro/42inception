@@ -9,6 +9,8 @@ services:
     restart: unless-stopped
     volumes:
       - wp-volume:/var/www/html:ro
+    depends_on:
+      - wordpress
 
   wordpress:
     build:
@@ -20,6 +22,29 @@ services:
       - "9000"
     volumes:
       - wp-volume:/var/www/html
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    depends_on:
+      - mariadb
+
+  mariadb:
+    build:
+      context: ./requirements/mariadb
+      dockerfile: Dockerfile
+    container_name: mariadb
+    restart: unless-stopped
+    expose:
+      - "3306"
+    volumes:
+      - db-volume:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
 
 volumes:
   wp-volume: {}
+  db-volume: {}
