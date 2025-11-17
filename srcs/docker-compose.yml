@@ -11,6 +11,8 @@ services:
       - wp-volume:/var/www/html:ro
     depends_on:
       - wordpress
+    networks:
+      - frontend
 
   wordpress:
     build:
@@ -36,6 +38,9 @@ services:
       WP_USER_EMAIL: ${WP_USER_EMAIL}
     depends_on:
       - mariadb
+    networks:
+      - frontend
+      - backend
 
   mariadb:
     build:
@@ -52,7 +57,14 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    networks:
+      - backend
 
 volumes:
   wp-volume: {}
   db-volume: {}
+
+networks:
+  frontend: {}
+  backend:
+    internal: true
