@@ -2,6 +2,8 @@
 set -eo pipefail
 
 echo "Starting MariaDB entrypoint..."
+MYSQL_PASSWORD=$(cat $MYSQL_PASSWORD_FILE)
+MYSQL_ROOT_PASSWORD=$(cat $MYSQL_ROOT_PASSWORD_FILE)
 
 # Initialize MariaDB if needed
 if [ ! -f "/var/lib/mysql/.initialized" ]; then

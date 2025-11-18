@@ -2,6 +2,16 @@
 set -e
 
 WORDPRESS_PATH="/var/www/html"
+MYSQL_PASSWORD=$(cat $MYSQL_PASSWORD_FILE)
+
+# Read WordPress credentials from secrets file
+if [ -f "$WP_CREDENTIALS_FILE" ]; then
+    WP_ADMIN_PASSWORD=$(jq -r '.admin_password' "$WP_CREDENTIALS_FILE")
+    WP_USER_PASSWORD=$(jq -r '.user_password' "$WP_CREDENTIALS_FILE")
+else
+    echo "Error: WordPress credentials secret not found at $WP_CREDENTIALS_FILE"
+    exit 1
+fi
 
 # Function to wait for database
 wait_for_db() {
