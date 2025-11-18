@@ -13,7 +13,6 @@ else
     exit 1
 fi
 
-# Function to wait for database
 wait_for_db() {
     echo "Waiting for database connection..."
     until php -r "
@@ -34,14 +33,11 @@ wait_for_db() {
 if [ ! -f "$WORDPRESS_PATH/wp-config.php" ]; then
     echo "WordPress not found in $WORDPRESS_PATH. Installing..."
     
-    # Wait for database to be ready
     wait_for_db
     
-    # Download WordPress using WP-CLI
     cd "$WORDPRESS_PATH"
     wp core download --allow-root
     
-    # Create wp-config.php
     wp config create \
         --dbname="$MYSQL_DATABASE" \
         --dbuser="$MYSQL_USER" \
@@ -49,7 +45,6 @@ if [ ! -f "$WORDPRESS_PATH/wp-config.php" ]; then
         --dbhost="mariadb:3306" \
         --allow-root
     
-    # Install WordPress with admin user
     wp core install \
         --url="$WP_URL" \
         --title="$WP_TITLE" \
@@ -58,13 +53,11 @@ if [ ! -f "$WORDPRESS_PATH/wp-config.php" ]; then
         --admin_email="$WP_ADMIN_EMAIL" \
         --allow-root
     
-    # Create additional user (as required by subject)
     wp user create "$WP_USER" "$WP_USER_EMAIL" \
         --user_pass="$WP_USER_PASSWORD" \
         --role=editor \
         --allow-root
     
-    # Set proper ownership
     chown -R www-data:www-data "$WORDPRESS_PATH"
     chmod -R 755 "$WORDPRESS_PATH"
     

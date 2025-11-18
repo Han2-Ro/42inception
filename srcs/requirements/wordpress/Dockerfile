@@ -1,9 +1,8 @@
-FROM debian:bookworm-slim
+FROM debian:bookworm
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV DEBIAN_FRONTEND=$DEBIAN_FRONTEND
 
-# Update package index and install PHP and required extensions for WordPress
 RUN apt-get update && apt-get install -y --no-install-recommends \
     php8.2 \
     php8.2-fpm \
@@ -26,7 +25,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && update-ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Create directories for WordPress
 RUN mkdir -p /var/www/html /run/php
 
 # Install WP-CLI
@@ -34,7 +32,6 @@ RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli
     && chmod +x wp-cli.phar \
     && mv wp-cli.phar /usr/local/bin/wp
 
-# Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
@@ -43,8 +40,6 @@ RUN sed -i 's/listen = \/run\/php\/php8.2-fpm.sock/listen = 9000/' /etc/php/8.2/
     sed -i 's/;listen.owner = www-data/listen.owner = www-data/' /etc/php/8.2/fpm/pool.d/www.conf && \
     sed -i 's/;listen.group = www-data/listen.group = www-data/' /etc/php/8.2/fpm/pool.d/www.conf
 
-# Expose port 9000 for PHP-FPM
 EXPOSE 9000
 
-# Use custom entrypoint script
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

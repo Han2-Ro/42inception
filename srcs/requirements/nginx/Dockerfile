@@ -1,6 +1,5 @@
-FROM debian:bookworm-slim
+FROM debian:bookworm
 
-# Install nginx and ssl-cert for testing
 RUN apt-get update && apt-get install -y --no-install-recommends nginx openssl && \
     rm -rf /var/lib/apt/lists/*
 
@@ -12,12 +11,10 @@ RUN mkdir -p /var/log/nginx /var/cache/nginx && \
         -out /etc/ssl/certs/ssl-cert-snakeoil.pem \
         -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
 
-# Copy basic nginx config
 COPY conf/nginx.conf /etc/nginx/nginx.conf
 
 RUN touch var/www/html/index.php
 
-# Expose port 443 for HTTPS
 EXPOSE 443
 
 # Run nginx in foreground
