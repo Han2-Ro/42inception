@@ -9,7 +9,8 @@ RUN mkdir -p /var/log/nginx /var/cache/nginx && \
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
         -keyout /etc/ssl/private/ssl-cert-snakeoil.key \
         -out /etc/ssl/certs/ssl-cert-snakeoil.pem \
-        -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
+        -subj "/C=AT/ST=Vienna/L=Vienna/O=42Vienna/CN=hrother.42.fr" \
+        -addext "subjectAltName=DNS:localhost,DNS:*.localhost,DNS:hrother.42.fr,IP:127.0.0.1"
 
 COPY conf/nginx.conf /etc/nginx/nginx.conf
 
